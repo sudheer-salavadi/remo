@@ -2,6 +2,8 @@
 
 Make polished launch, promo and social videos for your apps with code: React components rendered to MP4 by [Remotion](https://remotion.dev). Comes with After Effects style easing, film grain, transitions, and ready-made templates you fill in with your own brand and content.
 
+<p align="center"><img src="docs/demo.gif" width="360" alt="Demo: stat cards counting up, then an animated bar chart, from the Social templates"></p>
+
 ## Quick start
 
 ```bash
