@@ -3,5 +3,16 @@ dist
 .DS_Store
 .env
 
-# Ignore the output video from Git but not videos you import into src/.
+# Rendered videos and render scratch
 out
+
+# Your apps are private by default: only the demo app is published.
+# To publish one of yours, add a "!" line for it below.
+src/apps/*
+!src/apps/demo/
+public/apps/*
+!public/apps/demo/
+
+# Personal Claude Code notes (brand details, client context)
+CLAUDE.local.md
+.claude/settings.local.json
