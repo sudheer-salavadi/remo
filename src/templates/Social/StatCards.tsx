@@ -22,7 +22,8 @@ export const statCardsFrames = (p: StatCardsProps) => shellFrames(statBodyFrames
 // ───────── Value: numbers count up, words wipe on ─────────
 
 const parse = (v: string) => {
-  const m = v.match(/^([^\d]*?)(\d[\d,]*(?:\.\d+)?)(.*)$/);
+  // One number with a short prefix/suffix ("$5,000", "25%"). Dates and phrases ("Nov 16, 2026", "1 in 3") wipe on instead.
+  const m = v.match(/^([^\d]{0,3}?)(\d[\d,]*(?:\.\d+)?)([^\d]{0,4})$/);
   if (!m) return null;
   const raw = m[2];
   return { prefix: m[1], n: Number(raw.replace(/,/g, "")), dec: raw.includes(".") ? raw.split(".")[1].length : 0, comma: raw.includes(","), suffix: m[3] };
@@ -32,7 +33,7 @@ const Value: React.FC<{ readonly v: string; readonly p: number; readonly size: n
   const num = parse(v);
   if (!num) {
     return (
-      <span style={{ fontFamily: newsreaderUpright, fontWeight: 500, fontSize: size * 0.86, letterSpacing: "-0.01em", display: "inline-block", clipPath: `inset(0 ${(1 - p) * 100}% 0 0)` }}>
+      <span style={{ fontFamily: newsreaderUpright, fontWeight: 500, fontSize: Math.min(size * 0.86, 1800 / v.length), letterSpacing: "-0.01em", display: "inline-block", clipPath: `inset(0 ${(1 - p) * 100}% 0 0)` }}>
         {v}
       </span>
     );
@@ -186,12 +187,13 @@ const Heading: React.FC<{ readonly title: string; readonly subtitle?: string }> 
 
 // ───────── Spotlight: one stat per beat ─────────
 
-const Spot: React.FC<{ readonly s: Stat }> = ({ s }) => {
+const Spot: React.FC<{ readonly s: Stat; readonly last: boolean }> = ({ s, last }) => {
   const brand = useBrand();
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const enter = interpolate(frame, [0, 0.6 * fps], [0, 1], { easing: ease.out, ...clamp });
-  const exit = interpolate(frame, [SPOT - 14, SPOT], [0, 1], { easing: ease.in, ...clamp });
+  // The last stat holds until the scene transition takes it away.
+  const exit = last ? 0 : interpolate(frame, [SPOT - 14, SPOT], [0, 1], { easing: ease.in, ...clamp });
   const count = interpolate(frame, [6, 6 + 1.1 * fps], [0, 1], { easing: ease.inOut, ...clamp });
   const noteIn = interpolate(frame, [0.6 * fps, 1.0 * fps], [0, 1], { easing: ease.out, ...clamp });
   const big = s.visual === "none" && s.emoji ? { ...s, visual: "emoji" as const } : s;
@@ -247,7 +249,7 @@ const StatsInner: React.FC<StatCardsProps> = ({ title, subtitle, layout, stats, 
         <Heading title={title} subtitle={subtitle} />
         {stats.map((s, i) => (
           <Sequence key={s.label} from={i * SPOT} durationInFrames={i === n - 1 ? SPOT + 3 * fps : SPOT} name={`Stat: ${s.label}`} layout="none">
-            <Spot s={s} />
+            <Spot s={s} last={i === n - 1} />
           </Sequence>
         ))}
         <Dots n={n} />

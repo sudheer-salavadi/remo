@@ -25,7 +25,7 @@ const niceStep = (max: number) => {
 
 const short = (v: number) => (v >= 1e6 ? `${+(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}k` : `${v}`);
 
-const ChartInner: React.FC<BarChartProps> = ({ title, subtitle, legend, rows, prefix, suffix, topNote, source, brand }) => {
+const ChartInner: React.FC<BarChartProps> = ({ title, subtitle, legend, rows, prefix, suffix, decimals = 0, topNote, source, brand }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const light = mix(brand.bg, brand.ink, 0.24);
@@ -35,7 +35,17 @@ const ChartInner: React.FC<BarChartProps> = ({ title, subtitle, legend, rows, pr
   const max = peak * 1.04;
   const rowH = Math.min(200, (BOTTOM - TOP) / rows.length);
   const hasTop = rows.some((r) => r.top !== undefined);
-  const fmt = (v: number) => `${prefix}${(v >= 1000 ? Math.round(v / 10) * 10 : Math.round(v)).toLocaleString("en-US")}${suffix}`;
+  // Many rows: the top note moves up beside the value so each row is one line plus its bar.
+  const compact = rowH < 185;
+  const fmt = (v: number) =>
+    `${prefix}${(decimals ? v : v >= 1000 ? Math.round(v / 10) * 10 : Math.round(v)).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}${suffix}`;
+  const note = (top: number, p: number, size: number) => (
+    <div style={{ fontSize: size, color: brand.sub, fontWeight: 400, letterSpacing: 0, fontVariantNumeric: "tabular-nums", opacity: p, translate: `0 ${(1 - p) * 10}px` }}>
+      {topNote.split("{top}")[0]}
+      <span style={{ color: brand.ink, fontWeight: 600 }}>{fmt(top)}</span>
+      {topNote.split("{top}")[1] ?? ""}
+    </div>
+  );
   const gridIn = interpolate(frame, [0.3 * fps, 0.9 * fps], [0, 1], { easing: ease.out, ...clamp });
   const gridBottom = TOP + rows.length * rowH - 4;
 
@@ -82,20 +92,17 @@ const ChartInner: React.FC<BarChartProps> = ({ title, subtitle, legend, rows, pr
                 {r.emoji ? <Emoji e={r.emoji} size={40} style={{ scale: String(Math.max(0.001, pop)) }} /> : null}
                 {r.name}
               </div>
-              <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{fmt(r.value * grow)}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
+                {compact && r.top !== undefined ? note(r.top, topIn, 26) : null}
+                <div style={{ fontSize: compact ? 44 : 48, fontWeight: 800, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{fmt(r.value * grow)}</div>
+              </div>
             </div>
             <div style={{ position: "relative", height: BAR_H, marginTop: 16, opacity: enter }}>
               <div style={{ position: "absolute", inset: 0, borderRadius: BAR_H / 2, backgroundColor: track }} />
               <div style={{ position: "absolute", inset: 0, borderRadius: BAR_H / 2, backgroundColor: light, clipPath: `inset(0 ${(1 - (r.value + (top - r.value) * reach) / max) * 100}% 0 0 round ${BAR_H / 2}px)` }} />
               <div style={{ position: "absolute", inset: 0, borderRadius: BAR_H / 2, backgroundColor: brand.ink, clipPath: `inset(0 ${(1 - (r.value / max) * grow) * 100}% 0 0 round ${BAR_H / 2}px)` }} />
             </div>
-            {r.top !== undefined ? (
-              <div style={{ marginTop: 14, fontSize: 28, color: brand.sub, fontVariantNumeric: "tabular-nums", opacity: topIn, translate: `0 ${(1 - topIn) * 10}px` }}>
-                {topNote.split("{top}")[0]}
-                <span style={{ color: brand.ink, fontWeight: 600 }}>{fmt(r.top)}</span>
-                {topNote.split("{top}")[1] ?? ""}
-              </div>
-            ) : null}
+            {!compact && r.top !== undefined ? <div style={{ marginTop: 14 }}>{note(r.top, topIn, 28)}</div> : null}
           </div>
         );
       })}

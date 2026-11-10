@@ -81,6 +81,7 @@ export default function DemoCompositions() {
           legend: ["Average", "Top 10%"],
           prefix: "$",
           suffix: "",
+          decimals: 0,
           topNote: "Top 10% above {top}",
           rows: [
             { name: "Plumbing", emoji: "🔧", value: 420, top: 910 },

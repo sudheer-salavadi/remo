@@ -57,6 +57,8 @@ export const barChartSchema = shellSchema.extend({
   legend: z.tuple([z.string(), z.string()]).optional(),
   prefix: z.string().default(""),
   suffix: z.string().default(""),
+  /** Decimal places for values, e.g. 2 for hourly wages ($30.49). */
+  decimals: z.number().int().min(0).max(3).optional(),
   rows: z
     .array(
       z.object({
@@ -68,7 +70,7 @@ export const barChartSchema = shellSchema.extend({
       }),
     )
     .min(2)
-    .max(8),
+    .max(9),
   /** Template for the line under each bar; {top} is replaced. */
   topNote: z.string().default("Top 10% earn above {top}"),
 });
